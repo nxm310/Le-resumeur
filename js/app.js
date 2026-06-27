@@ -535,17 +535,20 @@ async function renderTabContent(site) {
     ` : '';
 
     contentEl.innerHTML = `
-      <div class="detail-section-card">
-        <div class="section-title-row">
+      <details class="detail-section-card collapsible-section" open>
+        <summary class="collapsible-summary">
           <div class="section-title">
             <svg class="section-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 21l8.904-4.43m-8.904-.666L12 15l2.771-.829m-5.462-.514L8.25 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             Synthèse de la Veille Intel
           </div>
+          <span class="collapse-icon">▼</span>
+        </summary>
+        <div class="collapsible-content">
+          <div class="summary-container">
+            ${parseMarkdown(site.lastSummary || "Aucun résumé n'a encore été généré. Veuillez cliquer sur **Vérifier** pour lancer la première analyse ou utiliser le formulaire d'analyse manuelle ci-dessous.")}
+          </div>
         </div>
-        <div class="summary-container">
-          ${parseMarkdown(site.lastSummary || "Aucun résumé n'a encore été généré. Veuillez cliquer sur **Vérifier** pour lancer la première analyse ou utiliser le formulaire d'analyse manuelle ci-dessous.")}
-        </div>
-      </div>
+      </details>
 
       ${pasteBoxHTML}
 

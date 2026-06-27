@@ -1109,3 +1109,59 @@ textarea.form-control {
   line-height: 1.4;
 }
 
+/* Collapsible sections styles */
+.collapsible-section {
+  padding: 0 !important; /* Override standard card padding */
+}
+
+.collapsible-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 2rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: border-bottom-color 0.25s ease;
+}
+
+.collapsible-summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-section[open] .collapsible-summary {
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.light-theme .collapsible-section[open] .collapsible-summary {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+.collapse-icon {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collapsible-section[open] .collapse-icon {
+  transform: rotate(180deg);
+}
+
+.collapsible-content {
+  padding: 1.5rem 2rem;
+  animation: slide-down-details 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-down-details {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
