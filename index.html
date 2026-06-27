@@ -203,6 +203,29 @@
     </form>
   </dialog>
 
+  <!-- ========================================== -->
+  <!-- MODAL: CUSTOM SELECTION SUMMARY DIALOG     -->
+  <!-- ========================================== -->
+  <dialog id="custom-summary-dialog" aria-labelledby="custom-summary-title" style="max-width: 650px;">
+    <div class="dialog-header">
+      <h2 id="custom-summary-title" class="dialog-title">Synthèse de votre sélection</h2>
+      <button class="dialog-close-btn" aria-label="Fermer la modal">
+        <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <div id="custom-summary-body" class="summary-container" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem; margin-bottom: 1.5rem;">
+      <!-- Contenu généré dynamiquement -->
+    </div>
+
+    <div class="dialog-actions-row">
+      <button type="button" id="btn-copy-custom-summary" class="btn btn-secondary">
+        📋 Copier le résumé
+      </button>
+      <button type="button" class="btn btn-primary">Fermer</button>
+    </div>
+  </dialog>
+
   <!-- Toast Notification System Element -->
   <div id="toast-container" class="toast-container"></div>
 

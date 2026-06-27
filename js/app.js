@@ -461,6 +461,33 @@ async function renderTabContent(site) {
 
   if (state.activeDetailTab === 'summary') {
     // RENDER AI SUMMARY
+    let itemsHTML = '';
+    const hasItems = site.lastExtractedItems && site.lastExtractedItems.length > 0;
+    
+    if (hasItems) {
+      site.lastExtractedItems.forEach((item, idx) => {
+        itemsHTML += `
+          <label class="extracted-item-card">
+            <input type="checkbox" class="extracted-item-checkbox" data-index="${idx}" data-timestamp="${item.timestamp || ''}">
+            <div class="extracted-item-content">
+              <div class="extracted-item-header">
+                <span class="extracted-item-title">${escapeHTML(item.title)}</span>
+                <span class="extracted-item-date">${escapeHTML(item.date)}</span>
+              </div>
+              <div class="extracted-item-summary">${escapeHTML(item.summary)}</div>
+            </div>
+          </label>
+        `;
+      });
+    } else {
+      itemsHTML = `
+        <div class="diff-empty">
+          Aucune publication individuelle n'a été extraite pour ce site.<br>
+          <span style="font-size:0.8rem; opacity:0.8;">Vérifiez que votre clé API Gemini est bien configurée dans les Réglages puis relancez la vérification pour lancer l'extraction automatique des actualités.</span>
+        </div>
+      `;
+    }
+
     contentEl.innerHTML = `
       <div class="detail-section-card">
         <div class="section-title-row">
@@ -473,7 +500,87 @@ async function renderTabContent(site) {
           ${parseMarkdown(site.lastSummary || "Aucun résumé n'a encore été généré. Veuillez cliquer sur **Vérifier** pour lancer la première analyse.")}
         </div>
       </div>
+
+      <div class="detail-section-card" style="margin-top: 2rem;">
+        <div class="section-title-row">
+          <div class="section-title">
+            <svg class="section-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            Éléments disponibles &amp; Synthèse sur-mesure
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Cochez les éléments à intégrer ou utilisez les filtres par période pour cocher rapidement les nouveautés, puis générez une synthèse IA consolidée.
+        </p>
+
+        ${hasItems ? `
+        <div class="period-filters-row">
+          <button class="btn btn-secondary btn-sm period-filter-btn" data-period="all">Tout cocher</button>
+          <button class="btn btn-secondary btn-sm period-filter-btn" data-period="week">Cette semaine</button>
+          <button class="btn btn-secondary btn-sm period-filter-btn" data-period="month">Ce mois</button>
+          <button class="btn btn-secondary btn-sm period-filter-btn" data-period="year">Cette année</button>
+          <button class="btn btn-secondary btn-sm period-filter-btn" data-period="none">Décocher tout</button>
+        </div>
+        ` : ''}
+
+        <div class="extracted-items-list" style="margin-top: 1rem;">
+          ${itemsHTML}
+        </div>
+
+        ${hasItems ? `
+        <button id="btn-generate-consolidated" class="btn btn-primary" style="margin-top: 1.5rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" disabled>
+          ⚡ Générer le résumé de la sélection (0)
+        </button>
+        ` : ''}
+      </div>
     `;
+
+    // Bind listeners
+    const btnGenerate = document.getElementById('btn-generate-consolidated');
+    if (btnGenerate) {
+      const checkboxes = contentEl.querySelectorAll('.extracted-item-checkbox');
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateConsolidatedButtonState);
+      });
+
+      contentEl.querySelectorAll('.period-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          applyPeriodFilter(e.target.dataset.period, site);
+        });
+      });
+
+      btnGenerate.addEventListener('click', async () => {
+        const checkedBoxes = contentEl.querySelectorAll('.extracted-item-checkbox:checked');
+        const selectedItems = [];
+        checkedBoxes.forEach(cb => {
+          const idx = parseInt(cb.dataset.index);
+          selectedItems.push(site.lastExtractedItems[idx]);
+        });
+
+        if (selectedItems.length === 0) return;
+
+        const dialog = document.getElementById('custom-summary-dialog');
+        const body = document.getElementById('custom-summary-body');
+        body.innerHTML = `
+          <div style="text-align: center; padding: 3rem 0; display:flex; flex-direction:column; align-items:center; gap:1rem;">
+            <div class="site-status-indicator checking" style="width:24px; height:24px;"></div>
+            <div>Génération du résumé de votre sélection en cours...</div>
+          </div>
+        `;
+        dialog.showModal();
+
+        try {
+          const result = await geminiService.generateConsolidatedSummary(selectedItems);
+          body.innerHTML = parseMarkdown(result);
+        } catch (error) {
+          console.error(error);
+          body.innerHTML = `
+            <div class="diff-empty" style="color: var(--danger);">
+              ❌ Erreur lors de la génération de la synthèse : ${escapeHTML(error.message)}
+            </div>
+          `;
+        }
+      });
+    }
   } else if (state.activeDetailTab === 'diff') {
     // RENDER VISUAL DIFF
     contentEl.innerHTML = `
@@ -579,6 +686,39 @@ async function renderTabContent(site) {
   }
 }
 
+function applyPeriodFilter(period, site) {
+  if (!site.lastExtractedItems) return;
+  const now = Date.now();
+  let threshold = 0;
+  
+  if (period === 'week') threshold = now - 7 * 24 * 60 * 60 * 1000;
+  else if (period === 'month') threshold = now - 30 * 24 * 60 * 60 * 1000;
+  else if (period === 'year') threshold = now - 365 * 24 * 60 * 60 * 1000;
+
+  const checkboxes = document.querySelectorAll('.extracted-item-checkbox');
+  checkboxes.forEach(cb => {
+    const timestampStr = cb.dataset.timestamp;
+    if (period === 'all') {
+      cb.checked = true;
+    } else if (period === 'none') {
+      cb.checked = false;
+    } else {
+      const timestamp = parseInt(timestampStr);
+      cb.checked = !isNaN(timestamp) && timestamp >= threshold;
+    }
+  });
+  updateConsolidatedButtonState();
+}
+
+function updateConsolidatedButtonState() {
+  const checkboxes = document.querySelectorAll('.extracted-item-checkbox:checked');
+  const btn = document.getElementById('btn-generate-consolidated');
+  if (!btn) return;
+  
+  btn.disabled = checkboxes.length === 0;
+  btn.innerHTML = `⚡ Générer le résumé de la sélection (${checkboxes.length})`;
+}
+
 function renderDiffLines(container, diffs) {
   container.innerHTML = '';
   
@@ -657,6 +797,19 @@ async function checkSite(id) {
     
     // If text is same
     if (oldText && oldText === cleanText) {
+      // If we don't have extracted items (e.g. key was added later), try to extract them now
+      if ((!site.lastExtractedItems || site.lastExtractedItems.length === 0) && geminiService.hasApiKey()) {
+        try {
+          const extracted = await geminiService.extractItems(cleanText);
+          if (extracted && extracted.length > 0) {
+            site.lastExtractedItems = extracted;
+            await dbHelper.updateSite(site);
+          }
+        } catch (err) {
+          console.warn("Échec d'extraction des éléments :", err);
+        }
+      }
+
       site.status = 'up-to-date';
       await dbHelper.updateSite(site);
       
@@ -672,10 +825,17 @@ async function checkSite(id) {
       // Content changed! (or first fetch)
       let summary = '';
       let diffJsonString = '';
+      let extractedItems = site.lastExtractedItems || [];
 
       if (geminiService.hasApiKey()) {
         // Trigger Gemini Summary
         summary = await geminiService.generateSummary(cleanText, oldText);
+        // Trigger Gemini Extraction
+        try {
+          extractedItems = await geminiService.extractItems(cleanText);
+        } catch (err) {
+          console.warn("Échec d'extraction des éléments par l'IA : ", err);
+        }
       } else {
         summary = "⚠️ **Résumé impossible** : Clé API Gemini non configurée. Veuillez ajouter votre clé dans les réglages pour activer la synthèse IA.";
       }
@@ -688,6 +848,7 @@ async function checkSite(id) {
       site.lastChanged = oldText ? Date.now() : site.lastChanged;
       site.lastSummary = summary;
       site.lastTextContent = cleanText;
+      site.lastExtractedItems = extractedItems;
       
       await dbHelper.updateSite(site);
 
@@ -919,7 +1080,33 @@ function setupEventListeners() {
       lastChecked: null,
       lastChanged: null,
       lastSummary: '',
-      lastTextContent: ''
+      lastTextContent: '',
+      lastExtractedItems: [
+        {
+          title: "Sortie du Processeur Quantum v2 (Détails)",
+          date: new Date().toLocaleDateString('fr-FR'),
+          summary: "Lancement officiel de la v2 avec 40% de gain de puissance et support IA local.",
+          timestamp: Date.now()
+        },
+        {
+          title: "Rapport d'activité IA du mois dernier",
+          date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR'),
+          summary: "Statistiques d'adoption de l'IA locale par les développeurs.",
+          timestamp: Date.now() - 15 * 24 * 60 * 60 * 1000
+        },
+        {
+          title: "Conférence TechWorld 2026",
+          date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR'),
+          summary: "Synthèse des annonces matérielles et logicielles pour l'année 2026.",
+          timestamp: Date.now() - 45 * 24 * 60 * 60 * 1000
+        },
+        {
+          title: "Archives : Lancement Quantum v1 (2025)",
+          date: "12 Octobre 2025",
+          summary: "Annonce initiale de l'architecture supraconductrice grand public.",
+          timestamp: Date.now() - 250 * 24 * 60 * 60 * 1000
+        }
+      ]
     };
     await dbHelper.addSite(mockSite);
     localStorage.setItem('mock_step', '0');
@@ -996,6 +1183,14 @@ function setupEventListeners() {
       reader.readAsText(file);
     };
     input.click();
+  });
+
+  // Copy custom summary to clipboard
+  document.getElementById('btn-copy-custom-summary').addEventListener('click', () => {
+    const text = document.getElementById('custom-summary-body').innerText;
+    navigator.clipboard.writeText(text)
+      .then(() => showToast("Résumé copié dans le presse-papiers !", "success"))
+      .catch(() => showToast("Impossible de copier le texte.", "error"));
   });
 }
 
