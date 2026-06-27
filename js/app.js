@@ -228,8 +228,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- LOAD DATA ---
 async function loadSites() {
   state.sites = await dbHelper.getAllSites();
-  // Sort sites alphabetically
-  state.sites.sort((a, b) => a.title.localeCompare(b.title));
+  // Sort sites alphabetically safely
+  state.sites.sort((a, b) => {
+    const titleA = a.title || '';
+    const titleB = b.title || '';
+    return titleA.localeCompare(titleB);
+  });
 }
 
 // --- TOAST NOTIFICATIONS ---
@@ -258,9 +262,12 @@ function renderSitesList() {
   listEl.innerHTML = '';
 
   const filtered = state.sites.filter(site => {
-    // Search filter
-    const matchesSearch = site.title.toLowerCase().includes(state.searchQuery.toLowerCase()) || 
-                          site.url.toLowerCase().includes(state.searchQuery.toLowerCase());
+    // Search filter safely
+    const title = (site.title || '').toLowerCase();
+    const url = (site.url || '').toLowerCase();
+    const query = (state.searchQuery || '').toLowerCase();
+    
+    const matchesSearch = title.includes(query) || url.includes(query);
     
     // Tag filter
     const matchesTag = state.activeTagFilter === 'all' || site.tag === state.activeTagFilter;
