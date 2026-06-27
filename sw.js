@@ -1,4 +1,4 @@
-const CACHE_NAME = 'le-resumeur-v1';
+const CACHE_NAME = 'le-resumeur-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -37,8 +37,9 @@ self.addEventListener('activate', (e) => {
 
 // Fetch Event
 self.addEventListener('fetch', (e) => {
-  // Let Gemini API and CORS Proxy calls bypass the cache
   const url = new URL(e.request.url);
+  
+  // Let Gemini API and CORS Proxy calls bypass the cache
   if (
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('allorigins') ||
@@ -47,13 +48,11 @@ self.addEventListener('fetch', (e) => {
     return; // Fetch from network normally
   }
 
+  // Network First Caching Strategy (Online-first, offline fallback)
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(e.request).then((networkResponse) => {
-        // Only cache valid responses from our own domain
+    fetch(e.request)
+      .then((networkResponse) => {
+        // Cache valid responses from our own domain
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -61,7 +60,10 @@ self.addEventListener('fetch', (e) => {
           });
         }
         return networkResponse;
-      });
-    })
+      })
+      .catch(() => {
+        // Fallback to cache if network fails (offline)
+        return caches.match(e.request);
+      })
   );
 });
