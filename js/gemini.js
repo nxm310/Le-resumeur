@@ -1,6 +1,19 @@
 class GeminiService {
   constructor() {
     this.modelName = 'gemini-2.5-flash';
+    this.lastRequestTime = 0;
+    this.minDelayMs = 4500; // Force a 4.5s delay between requests to stay under 15 RPM
+  }
+
+  async _throttle() {
+    const now = Date.now();
+    const elapsed = now - this.lastRequestTime;
+    if (elapsed < this.minDelayMs) {
+      const waitTime = this.minDelayMs - elapsed;
+      console.log(`Rate Limiter : attente de ${waitTime}ms pour respecter les quotas Gemini...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    this.lastRequestTime = Date.now();
   }
 
   getApiKey() {
@@ -49,6 +62,7 @@ class GeminiService {
   }
 
   async generateSummary(newContent, oldContent = '', customPrompt = '') {
+    await this._throttle();
     const apiKey = this.getApiKey();
     if (!apiKey) {
       throw new Error('Clé API Gemini manquante. Veuillez la configurer dans les réglages.');
@@ -103,6 +117,7 @@ class GeminiService {
   }
 
   async extractItems(newContent) {
+    await this._throttle();
     const apiKey = this.getApiKey();
     if (!apiKey) {
       throw new Error('Clé API Gemini manquante. Veuillez la configurer dans les réglages.');
@@ -157,6 +172,7 @@ class GeminiService {
   }
 
   async generateConsolidatedSummary(selectedItems) {
+    await this._throttle();
     const apiKey = this.getApiKey();
     if (!apiKey) {
       throw new Error('Clé API Gemini manquante. Veuillez la configurer dans les réglages.');
