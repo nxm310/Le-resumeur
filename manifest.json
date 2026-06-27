@@ -1,0 +1,25 @@
+{
+  "name": "Le Résumeur - Veille & Résumés",
+  "short_name": "Le Résumeur",
+  "description": "Surveillez vos pages web favorites et obtenez des résumés automatiques par l'IA Gemini lors des changements.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

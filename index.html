@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Résumeur - Veille Intelligente &amp; Résumés IA</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Surveillez les pages web de votre choix, détectez les modifications et obtenez des résumés automatisés générés par l'IA Gemini directement dans votre navigateur.">
+  <meta name="theme-color" content="#0f172a">
+  
+  <!-- PWA & iOS Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Le Résumeur">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top App Header -->
+    <header class="app-header">
+      <div class="logo-container">
+        <!-- SVG Inline Logo matching icon.svg -->
+        <svg class="logo-icon" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8" />
+              <stop offset="100%" stop-color="#818cf8" />
+            </linearGradient>
+            <linearGradient id="logo-accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#34d399" />
+              <stop offset="100%" stop-color="#059669" />
+            </linearGradient>
+          </defs>
+          <circle cx="256" cy="256" r="180" stroke="url(#logo-brand-grad)" stroke-width="4" stroke-opacity="0.2" />
+          <path d="M190 140 H290 L342 192 V372 C342 388.5 328.5 402 312 402 H190 C173.5 402 160 388.5 160 372 V170 C160 153.5 173.5 140 190 140 Z" fill="#1e293b" stroke="url(#logo-brand-grad)" stroke-width="4" />
+          <path d="M200 280 C220 250 282 250 302 280 C282 310 220 310 200 280 Z" fill="none" stroke="url(#logo-brand-grad)" stroke-width="4" />
+          <circle cx="251" cy="280" r="18" fill="url(#logo-accent-grad)" />
+          <line x1="190" y1="210" x2="260" y2="210" stroke="url(#logo-brand-grad)" stroke-width="4" />
+        </svg>
+        <span class="logo-text">Le Résumeur</span>
+      </div>
+      
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn btn-secondary btn-icon-only" aria-label="Changer de thème">☀️</button>
+        <button id="btn-settings" class="btn btn-secondary" aria-label="Paramètres de l'application">
+          <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+          Réglages
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="app-main">
+      
+      <!-- Left Sidebar (Site List) -->
+      <section id="sidebar" class="sidebar">
+        
+        <div class="sidebar-header">
+          <div class="sidebar-title-row">
+            <h2 style="font-size: 1.2rem;">Ma Veille</h2>
+            <button id="btn-add-site" class="btn btn-primary" aria-label="Ajouter un site à surveiller">
+              <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+              Ajouter
+            </button>
+          </div>
+          
+          <div class="search-wrapper">
+            <input type="text" id="search-bar" class="search-input" placeholder="Rechercher un site..." aria-label="Rechercher dans la veille">
+            <svg class="search-icon" viewBox="0 0 24 24">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Scrollable Tag Filters -->
+        <div id="tag-filters" class="tag-filters">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <!-- Scrollable Site List -->
+        <div id="sites-list" class="sites-list">
+          <!-- Populated by JavaScript -->
+        </div>
+
+        <div style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-glass); display: flex; gap: 0.5rem;">
+          <button id="btn-check-all" class="btn btn-secondary" style="flex:1;" aria-label="Vérifier tous les sites surveillés">
+            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+            Vérifier Tout
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Detail Pane -->
+      <section id="detail-pane" class="detail-pane">
+        <!-- Loaded by JavaScript (Selected Site View / Empty State) -->
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Mobile Floating Action Button -->
+  <button id="fab-add-site" class="fab-add btn btn-primary btn-icon-only" aria-label="Ajouter un site à surveiller">
+    <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+  </button>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT SITE DIALOG              -->
+  <!-- ========================================== -->
+  <dialog id="site-dialog" aria-labelledby="site-dialog-title">
+    <div class="dialog-header">
+      <h2 id="site-dialog-title" class="dialog-title">Surveiller un nouveau site</h2>
+      <button class="dialog-close-btn" aria-label="Fermer la modal">
+        <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <form id="site-form" method="dialog">
+      <input type="hidden" id="site-form-id">
+      
+      <div class="form-group">
+        <label for="site-title-input">Titre de la veille</label>
+        <input type="text" id="site-title-input" class="form-control" placeholder="ex: Blog Google AI" required>
+      </div>
+
+      <div class="form-group">
+        <label for="site-url-input">URL de la page</label>
+        <input type="url" id="site-url-input" class="form-control" placeholder="https://example.com/blog" required>
+      </div>
+
+      <div class="form-group">
+        <label for="site-selector-input">Sélecteur CSS (Optionnel)</label>
+        <input type="text" id="site-selector-input" class="form-control" placeholder="ex: article, .main-content, #content">
+        <span class="form-hint">Cible une zone précise et évite le bruit (headers, footers). Laissez vide pour tout lire.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="site-tag-input">Tag / Catégorie (Optionnel)</label>
+        <input type="text" id="site-tag-input" class="form-control" placeholder="ex: Tech, IA, Concurrents">
+      </div>
+
+      <div class="dialog-actions-row">
+        <button type="button" class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ========================================== -->
+  <!-- MODAL: SETTINGS DIALOG                     -->
+  <!-- ========================================== -->
+  <dialog id="settings-dialog" aria-labelledby="settings-dialog-title">
+    <div class="dialog-header">
+      <h2 id="settings-dialog-title" class="dialog-title">Réglages Le Résumeur</h2>
+      <button class="dialog-close-btn" aria-label="Fermer la modal">
+        <svg style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <form id="settings-form" method="dialog">
+      <div class="form-group">
+        <label for="settings-api-key">Clé API Gemini</label>
+        <input type="password" id="settings-api-key" class="form-control" placeholder="Collez votre clé API Gemini (AI Studio)">
+        <span class="form-hint">Obtenez une clé API gratuite sur <a href="https://aistudio.google.com/" target="_blank" style="color: var(--primary);">Google AI Studio</a>.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="settings-proxy">URL du Proxy CORS</label>
+        <input type="text" id="settings-proxy" class="form-control" placeholder="https://api.allorigins.win/raw?url=" required>
+        <span class="form-hint">Nécessaire pour interroger les sites directement. Modifiez uniquement en cas de besoin.</span>
+      </div>
+
+      <!-- Action Utilities inside Settings -->
+      <div style="margin: 1.5rem 0; padding-top: 1rem; border-top: 1px solid var(--border-glass); display: flex; flex-direction: column; gap: 0.75rem;">
+        <label style="font-size: 0.85rem; font-weight:600;">Outils &amp; Démo</label>
+        
+        <button type="button" id="btn-add-mock-site" class="btn btn-secondary" style="justify-content: flex-start;">
+          🚀 Ajouter le Blog Tech Démo (Mode Test)
+        </button>
+        <span class="form-hint" style="margin-top:-0.4rem; margin-bottom: 0.25rem;">Ajoute un site virtuel simulant des changements réels pour tester le fonctionnement et l'intégration Gemini immédiatement sans proxy CORS.</span>
+
+        <div style="display: flex; gap: 0.5rem; width:100%;">
+          <button type="button" id="btn-export-data" class="btn btn-secondary" style="flex:1;">Exporter JSON</button>
+          <button type="button" id="btn-import-data" class="btn btn-secondary" style="flex:1;">Importer JSON</button>
+        </div>
+        
+        <button type="button" id="btn-clear-db" class="btn btn-danger" style="width: 100%;">
+          ⚠️ Effacer toute la base de données
+        </button>
+      </div>
+
+      <div class="dialog-actions-row">
+        <button type="button" class="btn btn-secondary">Fermer</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Toast Notification System Element -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/db.js"></script>
+  <script src="js/gemini.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
