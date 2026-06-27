@@ -488,6 +488,26 @@ async function renderTabContent(site) {
       `;
     }
 
+    // Paste box HTML if status is error
+    const pasteBoxHTML = site.status === 'error' ? `
+      <div class="detail-section-card" style="margin-top: 2rem; border-color: var(--danger-glow); background: rgba(244, 63, 94, 0.04);">
+        <div class="section-title-row" style="border-bottom-color: rgba(244, 63, 94, 0.1);">
+          <div class="section-title" style="color: var(--danger);">
+            <svg class="section-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Échec de récupération automatique (CORS / Blocage)
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Le serveur de ce site bloque probablement les requêtes provenant de proxies publics (très fréquent pour les mairies/administrations). 
+          <strong>Vous pouvez copier-coller le contenu HTML ou texte de la page manuellement :</strong>
+        </p>
+        <textarea id="manual-paste-area" class="form-control" placeholder="Sur la page du site: faites Ctrl+A puis Ctrl+C, et collez le contenu ici..." style="min-height: 120px; font-family: monospace; font-size: 0.8rem;"></textarea>
+        <button id="btn-analyze-pasted" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">
+          🔍 Analyser le contenu collé
+        </button>
+      </div>
+    ` : '';
+
     contentEl.innerHTML = `
       <div class="detail-section-card">
         <div class="section-title-row">
@@ -497,9 +517,11 @@ async function renderTabContent(site) {
           </div>
         </div>
         <div class="summary-container">
-          ${parseMarkdown(site.lastSummary || "Aucun résumé n'a encore été généré. Veuillez cliquer sur **Vérifier** pour lancer la première analyse.")}
+          ${parseMarkdown(site.lastSummary || "Aucun résumé n'a encore été généré. Veuillez cliquer sur **Vérifier** pour lancer la première analyse ou utiliser le formulaire d'analyse manuelle ci-dessous.")}
         </div>
       </div>
+
+      ${pasteBoxHTML}
 
       <div class="detail-section-card" style="margin-top: 2rem;">
         <div class="section-title-row">
@@ -578,6 +600,69 @@ async function renderTabContent(site) {
               ❌ Erreur lors de la génération de la synthèse : ${escapeHTML(error.message)}
             </div>
           `;
+        }
+      });
+    }
+
+    // Bind manual paste listener
+    const btnAnalyze = document.getElementById('btn-analyze-pasted');
+    if (btnAnalyze) {
+      btnAnalyze.addEventListener('click', async () => {
+        const content = document.getElementById('manual-paste-area').value.trim();
+        if (!content) {
+          showToast("Veuillez coller du contenu à analyser.", "error");
+          return;
+        }
+
+        btnAnalyze.disabled = true;
+        btnAnalyze.innerHTML = `<span class="site-status-indicator checking" style="width:12px; height:12px; margin-right:4px;"></span> Analyse en cours...`;
+
+        try {
+          const cleanText = content.startsWith('<') ? cleanHTML(content, site.selector) : content;
+          if (!cleanText) {
+            throw new Error("L'extraction textuelle a échoué. Le contenu est peut-être vide.");
+          }
+
+          const oldText = site.lastTextContent || '';
+          let summary = '';
+          let extractedItems = [];
+
+          if (geminiService.hasApiKey()) {
+            summary = await geminiService.generateSummary(cleanText, oldText);
+            try {
+              extractedItems = await geminiService.extractItems(cleanText);
+            } catch (e) {
+              console.warn("Échec d'extraction des éléments par l'IA : ", e);
+            }
+          } else {
+            summary = "⚠️ **Résumé impossible** : Clé API Gemini non configurée. Veuillez ajouter votre clé dans les réglages.";
+          }
+
+          site.status = 'up-to-date';
+          site.lastChecked = Date.now();
+          site.lastChanged = oldText ? Date.now() : site.lastChanged;
+          site.lastSummary = summary;
+          site.lastTextContent = cleanText;
+          site.lastExtractedItems = extractedItems;
+
+          await dbHelper.updateSite(site);
+          await dbHelper.addHistory({
+            siteId: site.id,
+            timestamp: Date.now(),
+            status: 'up-to-date',
+            summary: summary,
+            rawText: cleanText
+          });
+
+          showToast("Contenu analysé et enregistré avec succès !", "success");
+          await loadSites();
+          renderSitesList();
+          renderDetailPane();
+        } catch (error) {
+          console.error(error);
+          showToast(`Erreur d'analyse : ${error.message}`, "error");
+          btnAnalyze.disabled = false;
+          btnAnalyze.innerHTML = `🔍 Analyser le contenu collé`;
         }
       });
     }
